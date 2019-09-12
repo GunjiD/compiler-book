@@ -19,6 +19,7 @@ struct Token {
 	Token *next;	// 次の入力トークン
 	int val;		// kindがTK_NUMの場合、その数値
 	char *str;		// トークン文字列
+	int len;		// トークンの長さ
 };
 
 // 入力プログラム
@@ -53,8 +54,11 @@ void error_at(char *loc, char *fmt, ...) {
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char op) {
-	if (token->kind != TK_RESERVED || token->str[0] != op)
+	if (token->kind != TK_RESERVED ||
+	    strlen(op) != token->len ||
+		memcpy(token->str, op, token->len))
 	  return false;
+	
 	token = token->next;
 	return true;
 }
@@ -63,8 +67,11 @@ bool consume(char op) {
 // それ以外の場合にはエラーを報告する。
 
 void expect(char op) {
-	if (token->kind != TK_RESERVED || token->str[0] != op)
+	if (token->kind != TK_RESERVED ||
+	    strlen(op) != token->len ||
+		memcpy(token->str, op, token->len))
 	  error_at(token->str, "'%c'ではありません", op);
+	
 	token = token->next;
 }
 
@@ -83,11 +90,12 @@ bool at_eof() {
 }
 
 //新しいトークンを作成して cur につなげる
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 	Token *tok = calloc(1, sizeof(Token));
 	tok->kind = kind;
 	tok->str = str;
 	cur->next = tok;
+	tok->len = len;
 	return tok;
 }
 
@@ -105,12 +113,12 @@ Token *tokenize(char *p) {
 		}
 		
 		if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-			cur = new_token(TK_RESERVED, cur, p++);
+			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
 
 		if (isdigit(*p)) {
-			cur = new_token(TK_NUM, cur, p);
+			cur = new_token(TK_NUM, cur, p, 0);
 			cur->val = strtol(p, &p, 10);
 			continue;
 		}
@@ -118,7 +126,7 @@ Token *tokenize(char *p) {
 		error_at(p, "tokenize できません");
 	}
 
-	new_token(TK_EOF, cur, p);
+	new_token(TK_EOF, cur, p, 0);
 	return head.next;
 }
 
