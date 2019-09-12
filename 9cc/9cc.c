@@ -53,12 +53,12 @@ void error_at(char *loc, char *fmt, ...) {
 }
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
-bool consume(char op) {
+bool consume(char *op) {
 	if (token->kind != TK_RESERVED ||
-	    strlen(op) != token->len ||
-		memcpy(token->str, op, token->len))
+		strlen(op) != token->len ||
+	    memcmp(token->str, op, token->len))
 	  return false;
-	
+	  
 	token = token->next;
 	return true;
 }
@@ -66,12 +66,11 @@ bool consume(char op) {
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
 
-void expect(char op) {
+void expect(char *op) {
 	if (token->kind != TK_RESERVED ||
-	    strlen(op) != token->len ||
-		memcpy(token->str, op, token->len))
+		strlen(op) != token->len ||
+	    memcmp(token->str, op, token->len))
 	  error_at(token->str, "'%c'ではありません", op);
-	
 	token = token->next;
 }
 
@@ -94,8 +93,9 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 	Token *tok = calloc(1, sizeof(Token));
 	tok->kind = kind;
 	tok->str = str;
-	cur->next = tok;
 	tok->len = len;
+	cur->next = tok;
+	
 	return tok;
 }
 
@@ -173,9 +173,9 @@ Node *expr() {
   Node *node = mul();
 
   for (;;) {
-    if (consume('+'))
+    if (consume("+"))
       node = new_node(ND_ADD, node, mul());
-    else if (consume('-'))
+    else if (consume("-"))
       node = new_node(ND_SUB, node, mul());
     else
       return node;
@@ -186,9 +186,9 @@ Node *mul() {
   Node *node = unary();
 
   for (;;) {
-    if (consume('*'))
+    if (consume("*"))
       node = new_node(ND_MUL, node, unary());
-    else if (consume('/'))
+    else if (consume("/"))
       node = new_node(ND_DIV, node, unary());
     else
       return node;
@@ -196,18 +196,18 @@ Node *mul() {
 }
 
 Node *unary() {
-	if (consume('+'))
+	if (consume("+"))
 	  return primary();
-	if(consume('-'))
+	if(consume("-"))
 	  return new_node(ND_SUB, new_node_num(0), primary());
 	return primary();
 }
 
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(")");
     return node;
   }
 
