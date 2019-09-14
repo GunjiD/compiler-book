@@ -165,21 +165,39 @@ Node *new_node_num(int val) {
 }
 
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
-Node *primary();
 Node *unary();
+Node *primary();
 
 Node *expr() {
-  Node *node = mul();
+  Node *node = equality();
 
   for (;;) {
     if (consume("+"))
-      node = new_node(ND_ADD, node, mul());
+      node = new_node(ND_ADD, node, equality());
     else if (consume("-"))
-      node = new_node(ND_SUB, node, mul());
+      node = new_node(ND_SUB, node, equality());
     else
       return node;
   }
+}
+
+Node *equality() {
+  Node *node = relational();
+  return node;
+}
+
+Node *relational() {
+	Node *node = add();
+	return node;
+}
+
+Node *add() {
+	Node *node = mul();
+	return node;
 }
 
 Node *mul() {
