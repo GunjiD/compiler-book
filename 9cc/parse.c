@@ -98,14 +98,14 @@ Token *tokenize(char *p) {
 		
 		if (*p == '+' || *p == '-' || *p == '*' || 
 		    *p == '/' || *p == '(' || *p == ')' ||
-			*p == '<' || *p == '>') {
+			*p == '<' || *p == '>' || *p == ';') {
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
 
 		// アルファベットの小文字ならば TK_IDENT 型のトークンを作成
-		if('a' <= *p && *p <= 'z') {
-			cur ~ new_token(TK_IDENT, cur, p++);
+		if ('a' <= *p && *p <= 'z') {
+			cur = new_token(TK_IDENT, cur, p++, 1);
 			cur->len = 1;
 			continue;
 		}
@@ -138,17 +138,43 @@ Node *new_node_num(int val) {
 	return node;
 }
 
+Node *program();
+Node *stmt();
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+Node *code[100];
+
+Node *program() {
+/*
+	int i = 0;
+	while (!at_eof())
+	  code[i++] = stmt();
+	code[i] = NULL;
+	*/
+return stmt();
+}
+
+Node *stmt() {
+	Node *node = expr();
+	expect(";");
+	return node;
+}
 
 Node *expr() {
-  Node *node = equality();
-  return node;
+  return assign();
+}
+
+Node *assign() {
+	Node *node = equality();
+	if (consume("="))
+	  node = new_node(ND_ASSIGN, node, assign()); 
+	return node;
 }
 
 Node *equality() {
@@ -215,6 +241,7 @@ Node *unary() {
 	return primary();
 }
 
+// prtmary = num | ident | "(" expr ")"
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
@@ -222,6 +249,8 @@ Node *primary() {
     expect(")");
     return node;
   }
+  // 次のトークンが変数（識別子）の場合
+  
 
   // そうでなければ数値のはず
   return new_node_num(expect_number());

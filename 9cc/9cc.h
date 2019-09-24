@@ -38,13 +38,15 @@ typedef enum {
 	ND_SUB,	// -
 	ND_MUL,	// *
 	ND_DIV,	// /
-	ND_NUM,	// 数字
+	ND_NUM,	// 整数
 	ND_EQ,	// ==
 	ND_NEQ,	// !=
 	ND_LT,	// <
 	ND_GT,	// >
 	ND_LE,	// <=
 	ND_GE,	// >=
+	ND_ASSIGN,	// =
+	ND_LVAR,	// ローカル変数
 } NodeKind;
 
 typedef struct Node Node;
@@ -54,10 +56,12 @@ struct Node {
 	NodeKind kind;
 	Node *lhs;
 	Node *rhs;
-	int val;	//kind が ND_NUM の場合のみ使う
+	int val;	// kind が ND_NUM の場合のみ使う
+	int offset;	// kind が ND_LVAR の場合のみ使う
 };
 
 Node *expr();
+Node *program();
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
