@@ -35,6 +35,15 @@ bool consume(char *op) {
 	token = token->next;
 	return true;
 }
+//	次のトークンが期待している識別子のときには、トークンを１つ読み進めて
+//	Token を返す。それ以外の場合には NULL を返す。
+Token *consume_ident() {
+	if (token->kind != TK_IDENT)
+		return NULL;
+	Token *tok = token;
+	token = token->next;
+	return tok;
+}
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
@@ -98,7 +107,8 @@ Token *tokenize(char *p) {
 		
 		if (*p == '+' || *p == '-' || *p == '*' || 
 		    *p == '/' || *p == '(' || *p == ')' ||
-			*p == '<' || *p == '>' || *p == ';') {
+			*p == '<' || *p == '>' || *p == ';' ||
+			*p == '=') {
 			cur = new_token(TK_RESERVED, cur, p++, 1);
 			continue;
 		}
@@ -151,13 +161,10 @@ Node *primary();
 Node *code[100];
 
 Node *program() {
-/*
 	int i = 0;
 	while (!at_eof())
 	  code[i++] = stmt();
 	code[i] = NULL;
-	*/
-return stmt();
 }
 
 Node *stmt() {
@@ -241,7 +248,7 @@ Node *unary() {
 	return primary();
 }
 
-// prtmary = num | ident | "(" expr ")"
+
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
@@ -250,7 +257,13 @@ Node *primary() {
     return node;
   }
   // 次のトークンが変数（識別子）の場合
-  
+  Token *tok = consume_ident();
+  if(tok) {
+	  Node *node = calloc(1, sizeof(Node));
+	  node->kind = ND_LVAR;
+	  node->offset = (tok->str[0] - 'a' + 1) * 8;
+	  return node;
+  }
 
   // そうでなければ数値のはず
   return new_node_num(expect_number());

@@ -62,6 +62,7 @@ struct Node {
 
 Node *expr();
 Node *program();
+extern Node *code[100];
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
