@@ -40,5 +40,6 @@ try 1 '3 >= 3;'
 try 1 '30 >= 20;'
 try 0 '20 >= 30;'
 try 1 'a=6; b=6; a==b;'
+try 5 'abc = 6; def = 1; abc - def;'
 
 echo OK

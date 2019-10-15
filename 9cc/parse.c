@@ -66,6 +66,16 @@ int expect_number() {
 	return val;
 }
 
+//	変数を名前で検索する。見つからなかった場合はNULLを返す。
+LVar *find_lvar(Token *tok) {
+	for (LVar *var = locals; var; var = var->next)
+		if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+			return var;
+	return NULL;
+}
+
+
+
 bool at_eof() {
 	return token->kind == TK_EOF;
 }
@@ -86,6 +96,9 @@ Token *tokenize(char *p) {
 	Token head;
 	head.next = NULL;
 	Token *cur = &head;
+
+	locals = calloc(1, sizeof(LVar));
+	locals->offset = 0;
 
 	while (*p) {
 		// 空白文字をスキップ
@@ -115,8 +128,16 @@ Token *tokenize(char *p) {
 
 		// アルファベットの小文字ならば TK_IDENT 型のトークンを作成
 		if ('a' <= *p && *p <= 'z') {
-			cur = new_token(TK_IDENT, cur, p++, 1);
-			cur->len = 1;
+			int len = 0;
+			char *tmp = p;
+			//	現在の位置から何文字か数える
+			while ('a' <= *p && *p <= 'z') {
+				len++;
+				p++;
+			}
+			
+			cur = new_token(TK_IDENT, cur, tmp, len);
+			cur->len = len;
 			continue;
 		}
 
@@ -261,7 +282,19 @@ Node *primary() {
   if(tok) {
 	  Node *node = calloc(1, sizeof(Node));
 	  node->kind = ND_LVAR;
-	  node->offset = (tok->str[0] - 'a' + 1) * 8;
+
+	  LVar *lvar = find_lvar(tok);
+	  if (lvar) {
+		  node->offset = lvar->offset;
+	  } else {
+		  lvar = calloc(1, sizeof(LVar));
+		  lvar->next = locals;
+		  lvar->name = tok->str;
+		  lvar->len = tok->len;
+		  lvar->offset = locals->offset + 8;
+		  node->offset = lvar->offset;
+		  locals = lvar;
+	  }
 	  return node;
   }
 
