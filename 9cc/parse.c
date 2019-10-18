@@ -74,7 +74,14 @@ LVar *find_lvar(Token *tok) {
 	return NULL;
 }
 
-
+//	与えられた英数字がトークンを構成する英数字かアンダースコアか
+//	判定する関数
+int is_alnum(char c) {
+	return	('a' <= c && 'z') ||
+			('A' <= c && 'Z') ||
+			('0' <= c && '9') ||
+			(c == '_');
+}
 
 bool at_eof() {
 	return token->kind == TK_EOF;
@@ -107,6 +114,27 @@ Token *tokenize(char *p) {
 			continue;
 		}
 
+		//	return をトークナイズ
+		if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
+			cur = new_token(TK_RESERVED, cur, p, 6);
+			p += 6;
+			continue;
+		}
+
+		// アルファベットの小文字ならば TK_IDENT 型のトークンを作成
+		if ('a' <= *p && *p <= 'z') {
+			int len = 0;
+			char *tmp = p;
+			//	現在の位置から何文字か数える
+			while ('a' <= *p && *p <= 'z') {
+				len++;
+				p++;
+			}
+			
+			cur = new_token(TK_IDENT, cur, tmp, len);
+			continue;
+		}
+
 		// 比較演算子は算術演算子よりも先に書く
 		if(memcmp(p, "==", 2) == 0 ||
 		   memcmp(p, "!=", 2) == 0 ||
@@ -123,21 +151,6 @@ Token *tokenize(char *p) {
 			*p == '<' || *p == '>' || *p == ';' ||
 			*p == '=') {
 			cur = new_token(TK_RESERVED, cur, p++, 1);
-			continue;
-		}
-
-		// アルファベットの小文字ならば TK_IDENT 型のトークンを作成
-		if ('a' <= *p && *p <= 'z') {
-			int len = 0;
-			char *tmp = p;
-			//	現在の位置から何文字か数える
-			while ('a' <= *p && *p <= 'z') {
-				len++;
-				p++;
-			}
-			
-			cur = new_token(TK_IDENT, cur, tmp, len);
-			cur->len = len;
 			continue;
 		}
 
@@ -189,7 +202,15 @@ Node *program() {
 }
 
 Node *stmt() {
-	Node *node = expr();
+	Node *node;
+
+	if (consume("return")) {
+		node = calloc(1, sizeof(Node));
+		node->kind = ND_RETURN;
+		node->lhs = expr();
+	} else {
+		node = expr();
+	}
 	expect(";");
 	return node;
 }
